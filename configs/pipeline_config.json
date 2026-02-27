@@ -1,0 +1,512 @@
+{
+  "target": {
+    "name": "15-PGDH",
+    "gene": "HPGD",
+    "uniprot": "P15428",
+    "pdb": "2GDZ",
+    "sequence": "AHMVNGKVALVTGAAQGIGRAFAEALLLKGAKVALVDWNLEAGVQCKAALHEQFEPQKTLFIQCDVADQQQLRDTFRKVVDHFGRLDILVNNAGVNNEKNWEKTLQINLVSVISGTYLGLDYMSKQNGGEGGIIINMSSLAGLMPVAQQPVYCASKHGIVGFTRSAALAANLMNSGVRLNAICPGFVNTAILESIEKEENMGQYIEYKDHIKDMIKYYGILDPPLIANGLITLIEDDALNGAIMKITTSKGIHFQDYGSKENLYFQ",
+    "n_residues": 266
+  },
+  "target_files": {
+    "monomer_pdb": "/cluster/home/csageder/gigabase-hack-berlin/targets/15pgdh_chainA.pdb",
+    "dimer_pdb": "/cluster/home/csageder/gigabase-hack-berlin/targets/15pgdh_dimer.pdb",
+    "sequence_fasta": "/cluster/home/csageder/gigabase-hack-berlin/targets/15pgdh_sequence.fasta"
+  },
+  "interface": {
+    "all_residues": [
+      61,
+      68,
+      76,
+      97,
+      99,
+      100,
+      101,
+      104,
+      105,
+      108,
+      109,
+      112,
+      113,
+      116,
+      123,
+      139,
+      142,
+      143,
+      144,
+      145,
+      146,
+      147,
+      148,
+      149,
+      150,
+      152,
+      153,
+      156,
+      157,
+      159,
+      160,
+      161,
+      163,
+      164,
+      165,
+      167,
+      168,
+      171,
+      172,
+      184,
+      185,
+      202,
+      203,
+      206,
+      209,
+      213,
+      217,
+      244,
+      246,
+      247,
+      248,
+      249,
+      252,
+      254,
+      260,
+      261,
+      262,
+      263,
+      264,
+      265
+    ],
+    "alpha9_helix": [
+      143,
+      144,
+      145,
+      146,
+      147,
+      148,
+      149,
+      150,
+      152,
+      153,
+      156,
+      157,
+      159,
+      160,
+      161,
+      163,
+      164,
+      165,
+      167,
+      168,
+      171,
+      172
+    ],
+    "lid_domain": [
+      185,
+      202,
+      203,
+      206,
+      209,
+      213,
+      217
+    ],
+    "other": [
+      61,
+      68,
+      76,
+      97,
+      99,
+      100,
+      101,
+      104,
+      105,
+      108,
+      109,
+      112,
+      113,
+      116,
+      123,
+      139,
+      142,
+      184,
+      244,
+      246,
+      247,
+      248,
+      249,
+      252,
+      254,
+      260,
+      261,
+      262,
+      263,
+      264,
+      265
+    ],
+    "residue_details": {
+      "61": {
+        "resname": "ILE",
+        "resname_1": "I",
+        "n_contacts": 34
+      },
+      "68": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 15
+      },
+      "76": {
+        "resname": "ARG",
+        "resname_1": "R",
+        "n_contacts": 92
+      },
+      "97": {
+        "resname": "GLU",
+        "resname_1": "E",
+        "n_contacts": 1
+      },
+      "99": {
+        "resname": "ASN",
+        "resname_1": "N",
+        "n_contacts": 89
+      },
+      "100": {
+        "resname": "TRP",
+        "resname_1": "W",
+        "n_contacts": 57
+      },
+      "101": {
+        "resname": "GLU",
+        "resname_1": "E",
+        "n_contacts": 11
+      },
+      "104": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 12
+      },
+      "105": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 37
+      },
+      "108": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 8
+      },
+      "109": {
+        "resname": "VAL",
+        "resname_1": "V",
+        "n_contacts": 18
+      },
+      "112": {
+        "resname": "ILE",
+        "resname_1": "I",
+        "n_contacts": 30
+      },
+      "113": {
+        "resname": "SER",
+        "resname_1": "S",
+        "n_contacts": 50
+      },
+      "116": {
+        "resname": "TYR",
+        "resname_1": "Y",
+        "n_contacts": 43
+      },
+      "123": {
+        "resname": "SER",
+        "resname_1": "S",
+        "n_contacts": 90
+      },
+      "139": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 24
+      },
+      "142": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 16
+      },
+      "143": {
+        "resname": "MET",
+        "resname_1": "M",
+        "n_contacts": 25
+      },
+      "144": {
+        "resname": "PRO",
+        "resname_1": "P",
+        "n_contacts": 43
+      },
+      "145": {
+        "resname": "VAL",
+        "resname_1": "V",
+        "n_contacts": 15
+      },
+      "146": {
+        "resname": "ALA",
+        "resname_1": "A",
+        "n_contacts": 36
+      },
+      "147": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 3
+      },
+      "148": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 2
+      },
+      "149": {
+        "resname": "PRO",
+        "resname_1": "P",
+        "n_contacts": 54
+      },
+      "150": {
+        "resname": "VAL",
+        "resname_1": "V",
+        "n_contacts": 15
+      },
+      "152": {
+        "resname": "CYS",
+        "resname_1": "C",
+        "n_contacts": 16
+      },
+      "153": {
+        "resname": "ALA",
+        "resname_1": "A",
+        "n_contacts": 35
+      },
+      "156": {
+        "resname": "HIS",
+        "resname_1": "H",
+        "n_contacts": 58
+      },
+      "157": {
+        "resname": "GLY",
+        "resname_1": "G",
+        "n_contacts": 26
+      },
+      "159": {
+        "resname": "VAL",
+        "resname_1": "V",
+        "n_contacts": 5
+      },
+      "160": {
+        "resname": "GLY",
+        "resname_1": "G",
+        "n_contacts": 35
+      },
+      "161": {
+        "resname": "PHE",
+        "resname_1": "F",
+        "n_contacts": 41
+      },
+      "163": {
+        "resname": "ARG",
+        "resname_1": "R",
+        "n_contacts": 30
+      },
+      "164": {
+        "resname": "SER",
+        "resname_1": "S",
+        "n_contacts": 65
+      },
+      "165": {
+        "resname": "ALA",
+        "resname_1": "A",
+        "n_contacts": 6
+      },
+      "167": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 15
+      },
+      "168": {
+        "resname": "ALA",
+        "resname_1": "A",
+        "n_contacts": 16
+      },
+      "171": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 39
+      },
+      "172": {
+        "resname": "MET",
+        "resname_1": "M",
+        "n_contacts": 31
+      },
+      "184": {
+        "resname": "GLY",
+        "resname_1": "G",
+        "n_contacts": 4
+      },
+      "185": {
+        "resname": "PHE",
+        "resname_1": "F",
+        "n_contacts": 16
+      },
+      "202": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 18
+      },
+      "203": {
+        "resname": "TYR",
+        "resname_1": "Y",
+        "n_contacts": 18
+      },
+      "206": {
+        "resname": "TYR",
+        "resname_1": "Y",
+        "n_contacts": 44
+      },
+      "209": {
+        "resname": "HIS",
+        "resname_1": "H",
+        "n_contacts": 11
+      },
+      "213": {
+        "resname": "MET",
+        "resname_1": "M",
+        "n_contacts": 64
+      },
+      "217": {
+        "resname": "TYR",
+        "resname_1": "Y",
+        "n_contacts": 56
+      },
+      "244": {
+        "resname": "LYS",
+        "resname_1": "K",
+        "n_contacts": 10
+      },
+      "246": {
+        "resname": "THR",
+        "resname_1": "T",
+        "n_contacts": 8
+      },
+      "247": {
+        "resname": "THR",
+        "resname_1": "T",
+        "n_contacts": 1
+      },
+      "248": {
+        "resname": "SER",
+        "resname_1": "S",
+        "n_contacts": 18
+      },
+      "249": {
+        "resname": "LYS",
+        "resname_1": "K",
+        "n_contacts": 13
+      },
+      "252": {
+        "resname": "HIS",
+        "resname_1": "H",
+        "n_contacts": 1
+      },
+      "254": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 14
+      },
+      "260": {
+        "resname": "GLU",
+        "resname_1": "E",
+        "n_contacts": 3
+      },
+      "261": {
+        "resname": "ASN",
+        "resname_1": "N",
+        "n_contacts": 25
+      },
+      "262": {
+        "resname": "LEU",
+        "resname_1": "L",
+        "n_contacts": 1
+      },
+      "263": {
+        "resname": "TYR",
+        "resname_1": "Y",
+        "n_contacts": 62
+      },
+      "264": {
+        "resname": "PHE",
+        "resname_1": "F",
+        "n_contacts": 92
+      },
+      "265": {
+        "resname": "GLN",
+        "resname_1": "Q",
+        "n_contacts": 31
+      }
+    }
+  },
+  "hotspots": {
+    "primary": [
+      76,
+      99,
+      100,
+      113,
+      123,
+      149,
+      156,
+      164,
+      213,
+      217,
+      263,
+      264
+    ],
+    "primary_rfdiff_format": [
+      "A76",
+      "A99",
+      "A100",
+      "A113",
+      "A123",
+      "A149",
+      "A156",
+      "A164",
+      "A213",
+      "A217",
+      "A263",
+      "A264"
+    ],
+    "alpha9_focused": [
+      "A143",
+      "A144",
+      "A145",
+      "A146",
+      "A147",
+      "A148",
+      "A149",
+      "A150",
+      "A152",
+      "A153",
+      "A156",
+      "A157",
+      "A159",
+      "A160",
+      "A161",
+      "A163",
+      "A164",
+      "A165",
+      "A167",
+      "A168",
+      "A171",
+      "A172"
+    ]
+  },
+  "design_params": {
+    "max_binder_length": 250,
+    "partial_T_values": [
+      15,
+      25,
+      35
+    ],
+    "mpnn_seqs_per_backbone": 8,
+    "mpnn_temperature": 0.1,
+    "boltz_diffusion_samples": 5
+  }
+}
