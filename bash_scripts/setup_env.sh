@@ -22,3 +22,9 @@ cd ${HOME}/gigabase-hack-berlin
 if [ -f "${HOME}/.huggingface_token" ]; then
     export HF_TOKEN=$(cat "${HOME}/.huggingface_token")
 fi
+
+# Centralized paths
+export GIGABASE_PROJECT="/cluster/project/krause/ssussex/gigabase"
+export BOLTZGEN_CACHE="${GIGABASE_PROJECT}/.boltzgen_cache"
+export BOLTZGEN_RUNS="${GIGABASE_PROJECT}/boltzgen_runs"
+export IPSAE_SCRIPT="${GIGABASE_PROJECT}/IPSAE/ipsae.py"
