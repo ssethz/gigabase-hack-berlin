@@ -88,6 +88,7 @@ for i in "${!YAML_FILES[@]}"; do
         --diffusion_samples "${DIFFUSION_SAMPLES}" \
         --max_parallel_samples 1 \
         --output_format pdb \
+        --write_full_pae \
         --override || {
             echo "FAILED: ${NAME}"
             FAILED=$((FAILED + 1))

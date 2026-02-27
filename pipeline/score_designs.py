@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-IPSAE_SCRIPT = Path("/cluster/home/csageder/IPSAE/ipsae.py")
+IPSAE_SCRIPT = Path("/cluster/project/krause/ssussex/gigabase/IPSAE/ipsae.py")
 
 
 def find_boltz_outputs(output_dir: Path) -> list[dict]:
