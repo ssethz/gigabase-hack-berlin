@@ -1,15 +1,21 @@
 #!/bin/bash
 #SBATCH --job-name=boltz_15pgdh
-#SBATCH --time=08:00:00
+#SBATCH --time=02:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=12G
 #SBATCH --gpus=nvidia_geforce_rtx_4090:1
-#SBATCH --output=logs/boltz_%j.out
-#SBATCH --error=logs/boltz_%j.err
+#SBATCH --output=logs/boltz_%A_%a.out
+#SBATCH --error=logs/boltz_%A_%a.err
 
 # Run Boltz-2 complex structure prediction on designed binders.
-# Usage: sbatch scripts/run_boltz.sh <yaml_dir> [diffusion_samples]
+#
+# Supports SLURM job arrays: submit with --array=0-(N-1) to run each YAML
+# on a separate GPU in parallel.
+#
+# Usage:
+#   sbatch --array=0-11 scripts/run_boltz.sh <yaml_dir> [diffusion_samples]
+#   sbatch scripts/run_boltz.sh <yaml_dir> [diffusion_samples]   # sequential fallback
 
 set -euo pipefail
 
@@ -17,7 +23,7 @@ export PGDH_ROOT="/cluster/home/csageder/gigabase-hack-berlin"
 source "${PGDH_ROOT}/scripts/setup_env.sh"
 
 YAML_DIR="${1:?Usage: $0 <yaml_dir> [diffusion_samples]}"
-DIFFUSION_SAMPLES="${2:-5}"
+DIFFUSION_SAMPLES="${2:-1}"
 
 module load eth_proxy
 module load stack/2024-06 gcc/12.2.0
@@ -27,16 +33,19 @@ set +u
 source "${STRUCT_CONDA_BASE}/bin/activate" "${STRUCT_CONDA_ENV}"
 set -u
 
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-OUTPUT_DIR="${PGDH_SCRATCH}/boltz/${TIMESTAMP}"
+# Use BOLTZ_OUTPUT_DIR env var if set by pipeline, otherwise generate timestamp-based path
+OUTPUT_DIR="${BOLTZ_OUTPUT_DIR:-${PGDH_SCRATCH}/boltz/$(date +%Y%m%d_%H%M%S)}"
 mkdir -p "${OUTPUT_DIR}"
 
 export NVIDIA_TF32_OVERRIDE=1
+
+TASK_ID="${SLURM_ARRAY_TASK_ID:-}"
 
 echo "=== Boltz-2 Complex Prediction ==="
 echo "YAML dir: ${YAML_DIR}"
 echo "Diffusion samples: ${DIFFUSION_SAMPLES}"
 echo "Output: ${OUTPUT_DIR}"
+echo "Array task ID: ${TASK_ID:-none (sequential mode)}"
 
 if [ ! -d "${YAML_DIR}" ]; then
     echo "ERROR: YAML directory not found: ${YAML_DIR}"
@@ -64,16 +73,42 @@ PY
 
 YAML_FILES=($(find "${YAML_DIR}" -name "*.yaml" | sort))
 TOTAL=${#YAML_FILES[@]}
-echo "Processing ${TOTAL} YAML files..."
+
 if [ "${TOTAL}" -eq 0 ]; then
     echo "ERROR: No YAML files found in ${YAML_DIR}"
     exit 1
 fi
 
 if [ "${PRECHECK_ONLY:-0}" = "1" ]; then
-    echo "PRECHECK_ONLY=1 set; Boltz preflight passed."
+    echo "PRECHECK_ONLY=1 set; Boltz preflight passed. Total YAMLs: ${TOTAL}"
     exit 0
 fi
+
+# ── Array mode: process only the YAML assigned to this task ──
+if [ -n "${TASK_ID}" ]; then
+    if [ "${TASK_ID}" -ge "${TOTAL}" ]; then
+        echo "SKIP: Task ID ${TASK_ID} >= total YAMLs ${TOTAL}"
+        exit 0
+    fi
+
+    YAML="${YAML_FILES[${TASK_ID}]}"
+    NAME=$(basename "${YAML}" .yaml)
+    echo "--- [task ${TASK_ID}/${TOTAL}] ${NAME} ---"
+
+    boltz predict "${YAML}" \
+        --out_dir "${OUTPUT_DIR}/${NAME}" \
+        --diffusion_samples "${DIFFUSION_SAMPLES}" \
+        --max_parallel_samples 1 \
+        --output_format pdb \
+        --write_full_pae \
+        --override
+
+    echo "=== Boltz-2 task ${TASK_ID} complete: ${NAME} ==="
+    exit 0
+fi
+
+# ── Sequential fallback (no array): process all YAMLs ──
+echo "Processing ${TOTAL} YAML files sequentially..."
 
 FAILED=0
 
@@ -99,13 +134,12 @@ echo ""
 echo "=== Boltz-2 complete ==="
 echo "Output: ${OUTPUT_DIR}"
 N_CONF=$(find "${OUTPUT_DIR}" -name "confidence_*.json" | wc -l)
-echo "${N_CONF}"
-echo "predictions generated"
+echo "${N_CONF} predictions generated"
 if [ "${N_CONF}" -eq 0 ]; then
     echo "ERROR: Boltz produced zero confidence JSON files."
     exit 1
 fi
 if [ "${FAILED}" -gt 0 ]; then
-    echo "ERROR: ${FAILED} Boltz predictions failed."
+    echo "WARNING: ${FAILED} Boltz predictions failed."
     exit 1
 fi

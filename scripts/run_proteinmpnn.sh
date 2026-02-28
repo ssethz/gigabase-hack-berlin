@@ -1,15 +1,21 @@
 #!/bin/bash
 #SBATCH --job-name=mpnn_15pgdh
-#SBATCH --time=02:00:00
+#SBATCH --time=00:30:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=12G
 #SBATCH --gpus=nvidia_geforce_rtx_4090:1
-#SBATCH --output=logs/mpnn_%j.out
-#SBATCH --error=logs/mpnn_%j.err
+#SBATCH --output=logs/mpnn_%A_%a.out
+#SBATCH --error=logs/mpnn_%A_%a.err
 
 # Run ProteinMPNN sequence design on RFdiffusion backbones.
-# Usage: sbatch scripts/run_proteinmpnn.sh <backbone_dir> [seqs_per_target] [temperature]
+#
+# Supports SLURM job arrays: submit with --array=0-(N-1) to parallelize
+# across N GPUs, each processing 1 backbone PDB.
+#
+# Usage:
+#   sbatch --array=0-9 scripts/run_proteinmpnn.sh <backbone_dir> [seqs_per_target] [temperature]
+#   sbatch scripts/run_proteinmpnn.sh <backbone_dir> [seqs_per_target] [temperature]
 
 set -euo pipefail
 
@@ -18,7 +24,7 @@ source "${PGDH_ROOT}/scripts/setup_env.sh"
 
 BACKBONE_DIR="${1:?Usage: $0 <backbone_dir> [seqs_per_target] [temperature]}"
 SEQS_PER_TARGET="${2:-8}"
-TEMPERATURE="${3:-0.1}"
+TEMPERATURE="${3:-0.2}"
 
 module load eth_proxy
 module load stack/2024-06 gcc/12.2.0
@@ -28,24 +34,28 @@ set +u
 source "${STRUCT_CONDA_BASE}/bin/activate" "${STRUCT_CONDA_ENV}"
 set -u
 
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-OUTPUT_DIR="${PGDH_SCRATCH}/mpnn/${TIMESTAMP}"
+# Use MPNN_OUTPUT_DIR env var if set by pipeline, otherwise generate timestamp-based path
+OUTPUT_DIR="${MPNN_OUTPUT_DIR:-${PGDH_SCRATCH}/mpnn/$(date +%Y%m%d_%H%M%S)}"
 mkdir -p "${OUTPUT_DIR}"
+
+TASK_ID="${SLURM_ARRAY_TASK_ID:-}"
 
 echo "=== ProteinMPNN Sequence Design ==="
 echo "Backbones: ${BACKBONE_DIR}"
 echo "Seqs per target: ${SEQS_PER_TARGET}"
 echo "Temperature: ${TEMPERATURE}"
 echo "Output: ${OUTPUT_DIR}"
+echo "Array task ID: ${TASK_ID:-none (all backbones)}"
 
 if [ ! -d "${BACKBONE_DIR}" ]; then
     echo "ERROR: Backbone directory not found: ${BACKBONE_DIR}"
     exit 1
 fi
 
-N_BACKBONES=$(find "${BACKBONE_DIR}" -maxdepth 1 -name "*.pdb" | wc -l)
+PDB_FILES=($(find "${BACKBONE_DIR}" -maxdepth 1 \( -name "*.pdb" -o -name "*.cif" \) | sort))
+N_BACKBONES=${#PDB_FILES[@]}
 if [ "${N_BACKBONES}" -eq 0 ]; then
-    echo "ERROR: No backbone PDB files found in ${BACKBONE_DIR}"
+    echo "ERROR: No backbone PDB/CIF files found in ${BACKBONE_DIR}"
     exit 1
 fi
 
@@ -77,7 +87,49 @@ if missing:
     sys.exit(1)
 PY
 
-# Step 1: Parse PDB files to create MPNN input JSONLs
+# ── Array mode: create a temp dir with just the assigned backbone ──
+if [ -n "${TASK_ID}" ]; then
+    if [ "${TASK_ID}" -ge "${N_BACKBONES}" ]; then
+        echo "SKIP: Task ID ${TASK_ID} >= total backbones ${N_BACKBONES}"
+        exit 0
+    fi
+
+    SINGLE_FILE="${PDB_FILES[${TASK_ID}]}"
+    FILE_EXT="${SINGLE_FILE##*.}"
+    FILE_NAME=$(basename "${SINGLE_FILE}" ".${FILE_EXT}")
+    TASK_BACKBONE_DIR="${OUTPUT_DIR}/backbones_task${TASK_ID}"
+    TASK_OUTPUT_DIR="${OUTPUT_DIR}/task_${TASK_ID}_${FILE_NAME}"
+    mkdir -p "${TASK_BACKBONE_DIR}" "${TASK_OUTPUT_DIR}"
+    cp "${SINGLE_FILE}" "${TASK_BACKBONE_DIR}/"
+
+    echo "--- [task ${TASK_ID}/${N_BACKBONES}] ${FILE_NAME} (${FILE_EXT}) ---"
+
+    # CIF files with is_motif_atom_with_fixed_seq handle their own fixed positions;
+    # PDB files from the DARPin pipeline use --fix_binder_helices
+    MPNN_PREP_ARGS="--backbone_dir ${TASK_BACKBONE_DIR} --output_dir ${TASK_OUTPUT_DIR}"
+    if [ "${FILE_EXT}" = "pdb" ]; then
+        MPNN_PREP_ARGS="${MPNN_PREP_ARGS} --fix_binder_helices"
+    fi
+    python "${PGDH_ROOT}/pipeline/prepare_mpnn_inputs.py" ${MPNN_PREP_ARGS}
+
+    cd "${MPNN_DIR}"
+    python protein_mpnn_run.py \
+        --jsonl_path "${TASK_OUTPUT_DIR}/chains.jsonl" \
+        --chain_id_jsonl "${TASK_OUTPUT_DIR}/chain_ids.jsonl" \
+        --fixed_positions_jsonl "${TASK_OUTPUT_DIR}/fixed_positions.jsonl" \
+        --out_folder "${TASK_OUTPUT_DIR}/sequences" \
+        --num_seq_per_target "${SEQS_PER_TARGET}" \
+        --sampling_temp "${TEMPERATURE}" \
+        --batch_size 1 \
+        --use_soluble_model
+
+    rm -rf "${TASK_BACKBONE_DIR}"
+
+    echo "=== ProteinMPNN task ${TASK_ID} complete: ${FILE_NAME} ==="
+    exit 0
+fi
+
+# ── Sequential fallback (no array): process all backbones ──
 python "${PGDH_ROOT}/pipeline/prepare_mpnn_inputs.py" \
     --backbone_dir "${BACKBONE_DIR}" \
     --output_dir "${OUTPUT_DIR}" \
@@ -95,7 +147,6 @@ if [ "${PRECHECK_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 
-# Step 2: Run ProteinMPNN
 cd "${MPNN_DIR}"
 python protein_mpnn_run.py \
     --jsonl_path "${OUTPUT_DIR}/chains.jsonl" \
@@ -110,8 +161,7 @@ python protein_mpnn_run.py \
 echo "=== ProteinMPNN complete ==="
 echo "Output: ${OUTPUT_DIR}/sequences"
 N_FASTA=$(find "${OUTPUT_DIR}/sequences" -name "*.fa" | wc -l)
-echo "${N_FASTA}"
-echo "FASTA files generated"
+echo "${N_FASTA} FASTA files generated"
 if [ "${N_FASTA}" -eq 0 ]; then
     echo "ERROR: ProteinMPNN produced zero FASTA files."
     exit 1
