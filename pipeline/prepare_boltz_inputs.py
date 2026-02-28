@@ -43,13 +43,25 @@ def parse_mpnn_fasta(fasta_path: Path) -> list[dict]:
     return sequences
 
 
+def _msa_value(seq: str, msa_map: dict[str, str] | None) -> str:
+    """Return the MSA YAML value: a pre-computed a3m path if available, else 'empty'."""
+    if msa_map and seq in msa_map:
+        return msa_map[seq]
+    return "empty"
+
+
 def write_boltz_yaml(target_seq: str, binder_seq: str, name: str, output_path: Path,
-                     socs_box_seq: str | None = None, linker_seq: str | None = None):
+                     socs_box_seq: str | None = None, linker_seq: str | None = None,
+                     msa_map: dict[str, str] | None = None):
     """Write a Boltz-2 YAML input file for a target-binder complex.
 
     If socs_box_seq is provided, models the bioPROTAC ternary complex:
     chain A = 15-PGDH, chain B = DARPin-linker-SOCS_box fusion.
+
+    If msa_map is provided, the target chain uses a pre-computed a3m file
+    instead of 'empty'.
     """
+    target_msa = _msa_value(target_seq, msa_map)
     if socs_box_seq:
         linker = linker_seq or "GSGSGSGSG"
         fusion_seq = binder_seq + linker + socs_box_seq
@@ -59,7 +71,7 @@ sequences:
   - protein:
       id: A
       sequence: {target_seq}
-      msa: empty
+      msa: {target_msa}
   - protein:
       id: B
       sequence: {fusion_seq}
@@ -72,7 +84,7 @@ sequences:
   - protein:
       id: A
       sequence: {target_seq}
-      msa: empty
+      msa: {target_msa}
   - protein:
       id: B
       sequence: {binder_seq}
@@ -83,14 +95,25 @@ sequences:
         f.write(yaml_content)
 
 
-def write_boltz_yaml_multichain(chain_sequences: dict[str, str], name: str, output_path: Path):
-    """Write a Boltz-2 YAML for an arbitrary multi-chain complex."""
+def write_boltz_yaml_multichain(chain_sequences: dict[str, str], name: str, output_path: Path,
+                                fixed_chain_ids: list[str] | None = None,
+                                msa_map: dict[str, str] | None = None):
+    """Write a Boltz-2 YAML for an arbitrary multi-chain complex.
+
+    Fixed chains use pre-computed MSA a3m files when msa_map is provided.
+    """
+    if fixed_chain_ids is None:
+        fixed_chain_ids = []
     lines = [f"# Boltz-2 prediction: {name}", "sequences:"]
     for chain_id, seq in chain_sequences.items():
+        if chain_id in fixed_chain_ids:
+            msa_val = _msa_value(seq, msa_map)
+        else:
+            msa_val = "empty"
         lines.append(f"  - protein:")
         lines.append(f"      id: {chain_id}")
         lines.append(f"      sequence: {seq}")
-        lines.append(f"      msa: empty")
+        lines.append(f"      msa: {msa_val}")
     yaml_content = "\n".join(lines) + "\n"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
@@ -115,7 +138,19 @@ def main():
                         help="Linker sequence for fusion (default: from config or GSGSGSGSG)")
     parser.add_argument("--chain_info", default=None,
                         help="chain_info.json from prepare_mpnn_inputs.py (enables multi-chain mode)")
+    parser.add_argument("--msa_dir", default=None,
+                        help="Directory with pre-fetched a3m files and msa_map.json (from fetch_msa.py)")
     args = parser.parse_args()
+
+    msa_map = None
+    if args.msa_dir:
+        msa_map_path = Path(args.msa_dir) / "msa_map.json"
+        if msa_map_path.exists():
+            with open(msa_map_path) as f:
+                msa_map = json.load(f)
+            print(f"Loaded MSA map: {len(msa_map)} pre-computed MSA(s) from {args.msa_dir}")
+        else:
+            print(f"WARNING: --msa_dir given but {msa_map_path} not found, using msa: empty")
 
     multichain_mode = args.chain_info is not None
     chain_info = None
@@ -211,7 +246,9 @@ def main():
 
                 name = f"{backbone_name}_seq{i}"
                 yaml_path = output_dir / f"{name}.yaml"
-                write_boltz_yaml_multichain(chain_sequences, name, yaml_path)
+                write_boltz_yaml_multichain(chain_sequences, name, yaml_path,
+                                            fixed_chain_ids=fixed_chain_ids,
+                                            msa_map=msa_map)
 
                 binder_seqs = [chain_sequences[c] for c in designed_chain_ids if c in chain_sequences]
                 binder_seq = binder_seqs[0] if binder_seqs else chain_seqs[0]
@@ -226,7 +263,8 @@ def main():
                     name = f"{backbone_name}_seq{i}_fusion"
                 yaml_path = output_dir / f"{name}.yaml"
                 write_boltz_yaml(target_seq, binder_seq, name, yaml_path,
-                                 socs_box_seq=socs_box_seq, linker_seq=linker_seq)
+                                 socs_box_seq=socs_box_seq, linker_seq=linker_seq,
+                                 msa_map=msa_map)
 
             manifest.append({
                 "name": name,

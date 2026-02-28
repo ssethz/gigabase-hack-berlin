@@ -1,0 +1,26 @@
+# Best interface – DARPin binder + 15-PGDH target
+
+open /cluster/home/csageder/gigabase-hack-berlin/results/best_interface.cif
+delete solvent
+
+# Cartoon
+show cartoons
+color /A cornflowerblue target c
+color /B #FF7043 target c
+
+# Translucent surfaces
+surface /A
+color /A #BBDEFB target s
+transparency /A 72 target s
+
+surface /B
+color /B #FFAB91 target s
+transparency /B 72 target s
+
+# Clean look
+graphics silhouettes true width 1.2 color #333333
+set bgColor white
+lighting soft
+
+# Camera
+view

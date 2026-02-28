@@ -1,0 +1,31 @@
+# Candidate 3 – DARPin binder + 15-PGDH target
+
+open /cluster/home/csageder/gigabase-hack-berlin/results/candidate3_seq2_ipsae0.81_iptm0.90.pdb
+delete solvent
+
+# Cartoon
+show cartoons
+color /A #FF7043 target c
+color /B cornflowerblue target c
+color /C #5C9CE6 target c
+
+# Translucent surfaces
+surface /A
+color /A #FFAB91 target s
+transparency /A 72 target s
+
+surface /B
+color /B #BBDEFB target s
+transparency /B 72 target s
+
+surface /C
+color /C #90CAF9 target s
+transparency /C 72 target s
+
+# Clean look
+graphics silhouettes true width 1.2 color #333333
+set bgColor white
+lighting soft
+
+# Camera
+view

@@ -1,0 +1,32 @@
+# Scott's nanobody – binder + 15-PGDH target
+
+open /cluster/home/csageder/gigabase-hack-berlin/results/scotts.cif
+delete solvent
+
+# Cartoon
+show cartoons
+color /A cornflowerblue target c
+color /B #FF7043 target c
+
+# Translucent surfaces
+surface /A
+color /A #BBDEFB target s
+transparency /A 72 target s
+
+surface /B
+color /B #FFAB91 target s
+transparency /B 72 target s
+
+# Clean look
+graphics silhouettes true width 1.2 color #333333
+set bgColor white
+lighting soft
+
+# Highlight key residues
+show /A:187,219 atoms
+style /A:187,219 stick
+color /A:187,219 #43A047 target a
+label /A:187,219 residues
+
+# Camera
+view

@@ -1,0 +1,25 @@
+# 2GDZ – 15-PGDH wild-type structure
+
+open /cluster/home/csageder/gigabase-hack-berlin/2GDZ.pdb
+delete solvent
+hide atoms
+
+# Cartoon
+show cartoons
+color /A cornflowerblue target c
+
+# Translucent surface
+surface /A
+color /A #BBDEFB target s
+transparency /A 72 target s
+
+# Clean look
+graphics silhouettes true width 1.2 color #1A237E
+set bgColor white
+lighting soft
+
+# Highlight C-terminal seam zone in green
+color /A:187-216 #43A047 target c
+
+# Camera
+view

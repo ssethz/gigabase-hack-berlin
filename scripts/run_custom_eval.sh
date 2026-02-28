@@ -10,10 +10,11 @@
 #   4. Scoring with ipSAE + Boltz confidence metrics
 #
 # Usage:
-#   bash scripts/run_custom_eval.sh <pdb_folder> [run_name]
+#   bash scripts/run_custom_eval.sh <pdb_folder> [run_name] [--use_msa]
 #
 # Example:
 #   bash scripts/run_custom_eval.sh inputs/friend_designs my_eval_v1
+#   bash scripts/run_custom_eval.sh inputs/friend_designs my_eval_v1 --use_msa
 #
 # =============================================================================
 
@@ -23,8 +24,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PGDH_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${PGDH_ROOT}/scripts/setup_env.sh"
 
-INPUT_FOLDER="${1:?Usage: $0 <input_folder> [run_name]}"
+INPUT_FOLDER="${1:?Usage: $0 <input_folder> [run_name] [--use_msa]}"
 RUN_NAME="${2:-custom_eval_$(date +%Y%m%d_%H%M%S)}"
+
+USE_MSA=0
+for arg in "$@"; do
+    if [ "$arg" = "--use_msa" ]; then
+        USE_MSA=1
+    fi
+done
 
 SEQS_PER_TARGET="${CUSTOM_SEQS_PER_TARGET:-50}"
 MPNN_TEMP="${CUSTOM_MPNN_TEMP:-0.2}"
@@ -54,7 +62,8 @@ MPNN_OUT="${EVAL_DIR}/mpnn"
 YAML_DIR="${EVAL_DIR}/boltz_yamls"
 BOLTZ_OUT="${EVAL_DIR}/boltz"
 RESULTS_DIR="${EVAL_DIR}/results"
-mkdir -p "${MPNN_OUT}" "${YAML_DIR}" "${BOLTZ_OUT}" "${RESULTS_DIR}" "${PGDH_ROOT}/logs"
+MSA_DIR="${EVAL_DIR}/msa"
+mkdir -p "${MPNN_OUT}" "${YAML_DIR}" "${BOLTZ_OUT}" "${RESULTS_DIR}" "${MSA_DIR}" "${PGDH_ROOT}/logs"
 
 echo "============================================================"
 echo " Custom Evaluation Pipeline"
@@ -64,6 +73,7 @@ echo " Run name:       ${RUN_NAME}"
 echo " Seqs/backbone:  ${SEQS_PER_TARGET}"
 echo " MPNN temp:      ${MPNN_TEMP}"
 echo " Boltz samples:  ${BOLTZ_SAMPLES}"
+echo " Use MSA:        ${USE_MSA}"
 echo " Output:         ${EVAL_DIR}"
 echo "============================================================"
 echo ""
@@ -84,7 +94,7 @@ BOLTZ_LAUNCHER="${EVAL_DIR}/boltz_launcher.sh"
 cat > "${BOLTZ_LAUNCHER}" <<LAUNCHER_EOF
 #!/bin/bash
 #SBATCH --job-name=boltz_prep_${RUN_NAME}
-#SBATCH --time=00:15:00
+#SBATCH --time=00:30:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
@@ -133,6 +143,16 @@ with open('\${MERGED_CI}', 'w') as fh:
 print(f'Merged chain_info: {len(merged)} backbones')
 "
 
+MSA_ARGS=""
+if [ "${USE_MSA}" = "1" ] && [ -f "\${MERGED_CI}" ]; then
+    echo "=== Fetching MSA for fixed chains ==="
+    python pipeline/fetch_msa.py \\
+        --chain_info "\${MERGED_CI}" \\
+        --output_dir "${MSA_DIR}"
+    echo ""
+    MSA_ARGS="--msa_dir ${MSA_DIR}"
+fi
+
 for DIR in \${MPNN_SEQ_DIRS}; do
     echo "Generating Boltz YAMLs from: \${DIR}"
     if [ -f "\${MERGED_CI}" ]; then
@@ -140,13 +160,15 @@ for DIR in \${MPNN_SEQ_DIRS}; do
             --mpnn_dir "\${DIR}" \\
             --chain_info "\${MERGED_CI}" \\
             --output_dir "${YAML_DIR}" \\
-            --max_per_backbone ${MAX_PER_BACKBONE}
+            --max_per_backbone ${MAX_PER_BACKBONE} \\
+            \${MSA_ARGS}
     else
         python pipeline/prepare_boltz_inputs.py \\
             --mpnn_dir "\${DIR}" \\
             --config configs/pipeline_config.json \\
             --output_dir "${YAML_DIR}" \\
-            --max_per_backbone ${MAX_PER_BACKBONE}
+            --max_per_backbone ${MAX_PER_BACKBONE} \\
+            \${MSA_ARGS}
     fi
 done
 
@@ -242,6 +264,7 @@ cat > "${EVAL_DIR}/metadata.json" <<META_EOF
     "mpnn_temp": ${MPNN_TEMP},
     "boltz_samples": ${BOLTZ_SAMPLES},
     "max_per_backbone": ${MAX_PER_BACKBONE},
+    "use_msa": ${USE_MSA},
     "mpnn_job": "${MPNN_JOB}",
     "boltz_prep_job": "${PREP_JOB}",
     "eval_dir": "${EVAL_DIR}",
