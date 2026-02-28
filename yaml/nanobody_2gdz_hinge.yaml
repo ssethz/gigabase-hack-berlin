@@ -1,0 +1,17 @@
+entities:
+  - file:
+      path: /cluster/project/krause/ssussex/gigabase/2GDZ-dimer.cif
+      include:
+        - chain:
+            id: A
+      binding_types:
+        - chain:
+            id: A
+            binding: 185,217 
+  # Nanobody scaffolds to use for design
+  - file:
+      path:
+        - /cluster/project/krause/ssussex/gigabase/nanobody_scaffolds/7eow.yaml
+        - /cluster/project/krause/ssussex/gigabase/nanobody_scaffolds/7xl0.yaml
+        - /cluster/project/krause/ssussex/gigabase/nanobody_scaffolds/8coh.yaml
+        - /cluster/project/krause/ssussex/gigabase/nanobody_scaffolds/8z8v.yaml
